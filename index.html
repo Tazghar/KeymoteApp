@@ -29,17 +29,22 @@
         /* --- INTERFACE PRINCIPALE (DECK) --- */
         .main-container {
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            width: 100vw; height: 100vh; padding: 4vh 6vw;
+            width: 100vw; height: 100vh; padding: 2vh 6vw 4vh 6vw;
             transition: opacity 0.5s ease, filter 0.5s ease;
         }
 
         .top-info {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #21262d; padding-bottom: 1vh; margin-bottom: 1vh;
+        }
+
+        .system-display {
+            display: flex; gap: 3vw; align-items: center; font-size: 2vh; color: var(--text-gray);
         }
 
         .deck-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
-            gap: 2.5vh; width: 100%; height: 70%;
+            gap: 2.5vh; width: 100%; height: 72%;
         }
 
         .deck-btn {
@@ -69,48 +74,64 @@
         .stat-item { display: flex; align-items: center; gap: 10px; }
 
         /* --- BOUTONS SPÉCIAUX --- */
-        .btn-exit {
-            position: absolute; bottom: 2vh; right: 2vw;
-            background: none; border: none; color: #444; font-size: 3vh; cursor: pointer;
+        .btn-exit-top {
+            background: #21262d; border: 1px solid #30363d; color: #ff7b72; 
+            font-size: 1.8vh; padding: 0.5vh 2vw; border-radius: 5px; cursor: pointer; transition: 0.2s;
         }
+        .btn-exit-top:active { background: #da3637; color: white; }
 
         .notif-dot {
-            width: 15px; height: 15px; background: #30363d; border-radius: 50%;
+            width: 12px; height: 12px; background: #30363d; border-radius: 50%; display: inline-block;
         }
         .notif-alert { background: #f2c94c; box-shadow: 0 0 15px #f2c94c; animation: pulse 1.5s infinite; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
+        /* PANEAU CONFIG INITIALE */
         #setup-manual {
             position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-color);
             display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 200;
         }
+        .btn-pair {
+            background: linear-gradient(145deg, #238636, #1b692a); color: white; border: 2px solid #30363d;
+            padding: 3vh 6vw; font-size: 3vh; font-weight: bold; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 0 20px rgba(35, 134, 54, 0.4); transition: 0.2s;
+        }
+        .btn-pair:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
     <div id="setup-manual">
-        <h2 style="color: var(--accent-blue)">Configuration initiale</h2>
-        <button class="deck-btn" style="padding: 20px 40px;" onclick="initialiserManuellement()">
-            <span>🔗</span> ASSOCIER MA CARTE
+        <h2 style="color: var(--accent-blue); margin-bottom: 4vh; font-size: 4vh;">Aucun appareil associé</h2>
+        <button class="btn-pair" onclick="initialiserManuellement()">
+            🔗 PAIRER LE STREAM DECK
         </button>
     </div>
 
     <div id="veille-overlay" onclick="sortirDeVeille()">
         <div class="veille-time" id="v-time">00:00</div>
-        <div class="veille-date" id="v-date">Lundi 12 Octobre</div>
+        <div class="veille-date" id="v-date">-- -- --</div>
         <div class="veille-stats">
             <div class="stat-item"><span id="v-temp">--</span>°C <span id="v-weather-icon">☁️</span></div>
             <div class="stat-item">🔋 <span id="v-bat">--%</span></div>
-            <div class="stat-item"><div id="v-badge" class="notif-dot"></div></div>
+            <div class="stat-item"><div id="v-badge-veille" class="notif-dot"></div></div>
         </div>
         <p style="margin-top: 5vh; color: #333; font-size: 2vh;">Touchez pour ouvrir le Stream Deck</p>
     </div>
 
     <div class="main-container" id="deck-ui">
         <div class="top-info">
-            <div style="font-size: 2.5vh; font-weight: bold; color: var(--accent-blue);">KEYMOTE DECK</div>
-            <div id="deck-statut" style="color: var(--text-gray); font-size: 2vh;">Connexion...</div>
+            <div style="font-size: 2.2vh; font-weight: bold; color: var(--accent-blue);">
+                KEYMOTE <span id="deck-statut" style="color: var(--text-gray); font-size: 1.8vh; font-weight: normal; margin-left: 10px;">Vérification...</span>
+            </div>
+            
+            <div class="system-display">
+                <span id="main-clock" style="color: #ffffff; font-weight: bold;">00:00</span>
+                <span>🔋 <span id="main-bat">--%</span></span>
+                <span>Alertes: <div id="v-badge-main" class="notif-dot"></div></span>
+                <button class="btn-exit-top" onclick="quitterApplication()">✖ Quitter</button>
+            </div>
         </div>
 
         <div class="deck-grid">
@@ -121,8 +142,6 @@
             <button class="deck-btn" onclick="envoyerCommande('ecran')"><span>🖥️</span>Écran</button>
             <button class="deck-btn" onclick="validerExtinction()" style="color: #ff7b72;"><span>🔴</span>Power</button>
         </div>
-
-        <button class="btn-exit" onclick="quitterApplication()">✖ Quitter</button>
     </div>
 
     <script>
@@ -132,59 +151,102 @@
         let caracteristiqueBluetooth = null;
         let appareilBluetooth = null;
         let timerVeille;
-        let TEMPS_VEILLE = 30000; // 30s par défaut
+        let TEMPS_VEILLE = 30000; 
 
-        // --- 1. SYNCHRO AUTOMATIQUE PWA ---
+        // --- GESTION ET SECURITE DU BOOT DE L'APP ---
         window.addEventListener('load', async () => {
-            // Détection NFC (30 min de veille)
             if (new URLSearchParams(window.location.search).has('nfc')) {
                 TEMPS_VEILLE = 1800000;
             }
 
-            if (navigator.bluetooth && navigator.bluetooth.getDevices) {
-                const devices = await navigator.bluetooth.getDevices();
-                if (devices.length > 0) {
-                    appareilBluetooth = devices[0];
-                    rejouerConnexion();
-                } else {
-                    document.getElementById('setup-manual').style.display = 'flex';
-                }
-            }
-            
             demarrerHorloge();
             recupererMeteo();
             reinitialiserTimerVeille();
+
+            if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+                try {
+                    const devices = await navigator.bluetooth.getDevices();
+                    // SE CURITÉ : Si la liste est vide ou si l'appareil enregistré n'est plus accessible
+                    if (devices.length > 0 && devices[0].name === 'Keymote') {
+                        appareilBluetooth = devices[0];
+                        appareilBluetooth.addEventListener('gattserverdisconnected', onDeconnexion);
+                        rejouerConnexion();
+                    } else {
+                        // Pas de carte en mémoire -> On force l'affichage du panneau d'association
+                        afficherPanneauAssociation();
+                    }
+                } catch(err) {
+                    afficherPanneauAssociation();
+                }
+            } else {
+                afficherPanneauAssociation();
+            }
         });
+
+        function afficherPanneauAssociation() {
+            document.getElementById('setup-manual').style.display = 'flex';
+            document.getElementById('deck-statut').innerText = "(Non configuré)";
+        }
 
         async function initialiserManuellement() {
             try {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+                if (screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+
                 appareilBluetooth = await navigator.bluetooth.requestDevice({
                     filters: [{ name: 'Keymote' }],
                     optionalServices: [SERVICE_UUID]
                 });
+                
+                appareilBluetooth.addEventListener('gattserverdisconnected', onDeconnexion);
                 document.getElementById('setup-manual').style.display = 'none';
                 rejouerConnexion();
-            } catch (e) { alert("Erreur : " + e); }
+            } catch (e) { 
+                console.log("Association annulée ou impossible : ", e); 
+            }
         }
 
         async function rejouerConnexion() {
+            if (!appareilBluetooth) return;
             try {
-                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                if (screen.orientation.lock) screen.orientation.lock('landscape');
+                document.getElementById('deck-statut').innerText = "(Connexion...)";
+                document.getElementById('deck-statut').style.color = "var(--text-gray)";
                 
                 const gatt = await appareilBluetooth.gatt.connect();
                 const service = await gatt.getPrimaryService(SERVICE_UUID);
                 caracteristiqueBluetooth = await service.getCharacteristic(CHARACTERISTIC_UUID);
                 
-                document.getElementById('deck-statut').innerText = "Connecté ✔";
-                document.getElementById('v-badge').classList.remove('notif-alert');
+                document.getElementById('deck-statut').innerText = "(Connecté ✔)";
+                document.getElementById('deck-statut').style.color = "var(--accent-green)";
+                setNotificationBadge(false);
             } catch (e) {
-                document.getElementById('deck-statut').innerText = "Recherche...";
-                setTimeout(rejouerConnexion, 5000);
+                console.log("Échec de connexion : ", e);
+                document.getElementById('deck-statut').innerText = "(Recherche...)";
+                
+                // LE CORRECTIF CLEF : Si l'erreur indique que l'appareil n'existe plus ou est introuvable
+                if (e.message.includes("User cancelled") || e.message.includes("not found")) {
+                    if(appareilBluetooth.forget) {
+                        await appareilBluetooth.forget(); // Efface la mémoire morte
+                    }
+                    appareilBluetooth = null;
+                    afficherPanneauAssociation();
+                    return;
+                }
+                
+                // Sinon, c'est juste le switch USB (on retente dans 4s)
+                setTimeout(rejouerConnexion, 4000);
             }
         }
 
-        // --- 2. GESTION DE LA VEILLE (DASHBOARD) ---
+        function onDeconnexion() {
+            document.getElementById('deck-statut').innerText = "(Déconnecté ❌)";
+            document.getElementById('deck-statut').style.color = "#ff7b72";
+            caracteristiqueBluetooth = null;
+            setNotificationBadge(true);
+            rejouerConnexion();
+        }
+
+        // --- TIMERS VEILLE ---
         function reinitialiserTimerVeille() {
             sortirDeVeille();
             clearTimeout(timerVeille);
@@ -196,6 +258,12 @@
             document.getElementById('deck-ui').style.filter = 'blur(10px)';
         }
 
+        document.body.addEventListener('click', () => {
+            if(document.getElementById('veille-overlay').style.display === 'flex') {
+                sortirDeVeille();
+            }
+        });
+
         function sortirDeVeille() {
             document.getElementById('veille-overlay').style.display = 'none';
             document.getElementById('deck-ui').style.filter = 'none';
@@ -203,13 +271,16 @@
             timerVeille = setTimeout(activerVeille, TEMPS_VEILLE);
         }
 
-        // --- 3. INFOS SYSTÈME (HEURE, DATE, BATTERIE) ---
+        // --- SERVICES HORLOGE / BATTERIE / METEO ---
         function demarrerHorloge() {
             setInterval(() => {
                 const now = new Date();
                 const h = now.getHours().toString().padStart(2, '0');
                 const m = now.getMinutes().toString().padStart(2, '0');
-                document.getElementById('v-time').innerText = `${h}:${m}`;
+                const timeString = `${h}:${m}`;
+                
+                document.getElementById('v-time').innerText = timeString;
+                document.getElementById('main-clock').innerText = timeString;
                 
                 const options = { weekday: 'long', day: 'numeric', month: 'long' };
                 document.getElementById('v-date').innerText = now.toLocaleDateString('fr-FR', options);
@@ -217,32 +288,42 @@
 
             if (navigator.getBattery) {
                 navigator.getBattery().then(bat => {
-                    const updateBat = () => { document.getElementById('v-bat').innerText = Math.round(bat.level * 100) + "%"; };
+                    const updateBat = () => { 
+                        const percentage = Math.round(bat.level * 100) + "%";
+                        document.getElementById('v-bat').innerText = percentage;
+                        document.getElementById('main-bat').innerText = percentage;
+                    };
                     updateBat();
                     bat.onlevelchange = updateBat;
                 });
             }
         }
 
-        // --- 4. MÉTÉO ---
         async function recupererMeteo() {
             try {
-                // Utilisation d'un service gratuit sans clé API pour simplifier
                 const res = await fetch('https://wttr.in/?format=j1');
                 const data = await res.json();
                 document.getElementById('v-temp').innerText = data.current_condition[0].temp_C;
-                // On pourrait mapper les weatherCode pour changer l'icône
             } catch (e) { console.log("Meteo indisponible"); }
         }
 
-        // --- 5. COMMANDES & SORTIE ---
+        function setNotificationBadge(active) {
+            const bV = document.getElementById('v-badge-veille');
+            const bM = document.getElementById('v-badge-main');
+            if(active) { bV.classList.add('notif-alert'); bM.classList.add('notif-alert'); } 
+            else { bV.classList.remove('notif-alert'); bM.classList.remove('notif-alert'); }
+        }
+
+        // --- ENVOIS COMMANDES ---
         async function envoyerCommande(ordre) {
             reinitialiserTimerVeille();
             if (caracteristiqueBluetooth) {
-                const encoder = new TextEncoder();
-                await caracteristiqueBluetooth.writeValue(encoder.encode(ordre));
+                try {
+                    const encoder = new TextEncoder();
+                    await caracteristiqueBluetooth.writeValue(encoder.encode(ordre));
+                } catch(e) { setNotificationBadge(true); }
             } else {
-                document.getElementById('v-badge').classList.add('notif-alert');
+                setNotificationBadge(true);
             }
         }
 
@@ -251,16 +332,12 @@
         }
 
         function quitterApplication() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
-            // On redirige vers une page vide ou google pour "sortir"
-            if(confirm("Sortir vers le bureau ?")) {
+            if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+            if(confirm("Voulez-vous quitter le mode Deck ?")) {
                 window.location.href = "https://www.google.com";
             }
         }
 
-        // Écouteurs pour reset le timer au toucher
         window.addEventListener('touchstart', reinitialiserTimerVeille);
     </script>
 </body>
