@@ -5,115 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Keymote Deck Pro</title>
+    <title>Keymote Dashboard</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #0d1117;
-            color: #ffffff;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        :root {
+            --bg-color: #0d1117;
+            --accent-blue: #58a6ff;
+            --accent-green: #238636;
+            --text-gray: #8b949e;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        .top-bar {
-            position: absolute;
-            top: 2vh; right: 4vw; left: 4vw;
-            display: flex; justify-content: space-between; align-items: center;
-            z-index: 10;
-        }
-        .system-info { display: flex; gap: 4vw; align-items: center; font-size: 2.2vh; color: #8b949e; }
-        .battery-icon { display: flex; align-items: center; gap: 5px; }
-        .notif-badge { width: 12px; height: 12px; background-color: #30363d; border-radius: 50%; display: inline-block; }
-        .notif-active { background-color: #f2c94c; box-shadow: 0 0 10px #f2c94c; animation: pulse 1.5s infinite; }
-
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.5; }
-            100% { transform: scale(1); opacity: 1; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: #ffffff;
+            margin: 0; padding: 0;
+            overflow: hidden;
+            width: 100vw; height: 100vh;
         }
 
+        /* --- INTERFACE PRINCIPALE (DECK) --- */
         .main-container {
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            width: 95vw; height: 82vh; max-width: 800px; margin-top: 6vh;
+            width: 100vw; height: 100vh; padding: 4vh 6vw;
+            transition: opacity 0.5s ease, filter 0.5s ease;
         }
-        h1 { margin: 0; font-size: 4.5vh; color: #58a6ff; letter-spacing: 1px; }
-        .statut {
-            font-size: 2.5vh; margin: 0.5vh 0; color: #ff7b72; font-weight: bold;
-            background: #161b22; padding: 0.5vh 4vw; border-radius: 50px; border: 1px solid #30363d;
+
+        .top-info {
+            width: 100%; display: flex; justify-content: space-between; align-items: center;
         }
+
         .deck-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
-            gap: 2.5vh; width: 100%; height: 78%;
+            gap: 2.5vh; width: 100%; height: 70%;
         }
+
         .deck-btn {
             background: linear-gradient(145deg, #21262d, #161b22); color: white; border: 2px solid #30363d;
-            border-radius: 12px; font-size: 2.8vh; font-weight: bold; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); padding: 5px; text-align: center; height: 100%;
+            border-radius: 15px; font-size: 2.5vh; font-weight: bold; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
-        .deck-btn span { font-size: 6vh; margin-bottom: 0.5vh; }
-        .deck-btn:active { transform: scale(0.95); border-color: #58a6ff; }
-        
-        #overlay-demarrage {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #0d1117; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
-        }
-        .btn-start {
-            background: linear-gradient(145deg, #238636, #1b692a); color: white; border: 2px solid #30363d;
-            padding: 4vh 8vw; font-size: 4.5vw; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 0 20px rgba(35, 134, 54, 0.5);
-            text-align: center;
-        }
-        @media (orientation: portrait) { .btn-start { font-size: 5.5vw; } }
+        .deck-btn span { font-size: 5vh; margin-bottom: 5px; }
+        .deck-btn:active { transform: scale(0.92); border-color: var(--accent-blue); }
 
-        #voile-veille {
+        /* --- INTERFACE DE VEILLE (DASHBOARD) --- */
+        #veille-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(0, 0, 0, 0.95); z-index: 99999; display: none; pointer-events: none;
-            align-items: center; justify-content: center; color: #444; font-size: 2.5vh;
+            background-color: var(--bg-color);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; text-align: center;
+        }
+
+        .veille-time { font-size: 22vh; font-weight: bold; line-height: 1; color: white; }
+        .veille-date { font-size: 5vh; color: var(--accent-blue); margin-bottom: 4vh; text-transform: capitalize; }
+        
+        .veille-stats {
+            display: flex; gap: 8vw; font-size: 3.5vh; color: var(--text-gray);
+        }
+
+        .stat-item { display: flex; align-items: center; gap: 10px; }
+
+        /* --- BOUTONS SPÉCIAUX --- */
+        .btn-exit {
+            position: absolute; bottom: 2vh; right: 2vw;
+            background: none; border: none; color: #444; font-size: 3vh; cursor: pointer;
+        }
+
+        .notif-dot {
+            width: 15px; height: 15px; background: #30363d; border-radius: 50%;
+        }
+        .notif-alert { background: #f2c94c; box-shadow: 0 0 15px #f2c94c; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        #setup-manual {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-color);
+            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 200;
         }
     </style>
 </head>
 <body>
 
-    <div id="voile-veille">💤 Mode Éco (Touchez pour réveiller)</div>
-
-    <div id="overlay-demarrage">
-        <button class="btn-start" id="main-action-btn" onclick="initialiserConfigurationManuelle()">
-            ⚡ PREMIÈRE SYNCHRONISATION
+    <div id="setup-manual">
+        <h2 style="color: var(--accent-blue)">Configuration initiale</h2>
+        <button class="deck-btn" style="padding: 20px 40px;" onclick="initialiserManuellement()">
+            <span>🔗</span> ASSOCIER MA CARTE
         </button>
     </div>
 
-    <div class="top-bar">
-        <div id="clock" style="font-size: 2.2vh; color: #8b949e;">00:00</div>
-        <div class="system-info">
-            <div id="notif-indicator" class="battery-icon">
-                <span>Alertes</span><span id="badge" class="notif-badge"></span>
-            </div>
-            <div class="battery-icon">
-                <span>🔋</span><span id="battery-level">--%</span>
-            </div>
+    <div id="veille-overlay" onclick="sortirDeVeille()">
+        <div class="veille-time" id="v-time">00:00</div>
+        <div class="veille-date" id="v-date">Lundi 12 Octobre</div>
+        <div class="veille-stats">
+            <div class="stat-item"><span id="v-temp">--</span>°C <span id="v-weather-icon">☁️</span></div>
+            <div class="stat-item">🔋 <span id="v-bat">--%</span></div>
+            <div class="stat-item"><div id="v-badge" class="notif-dot"></div></div>
         </div>
+        <p style="margin-top: 5vh; color: #333; font-size: 2vh;">Touchez pour ouvrir le Stream Deck</p>
     </div>
 
-    <div class="main-container">
-        <h1>STREAM DECK</h1>
-        <div class="statut" id="statut">Statut : Déconnecté ❌</div>
+    <div class="main-container" id="deck-ui">
+        <div class="top-info">
+            <div style="font-size: 2.5vh; font-weight: bold; color: var(--accent-blue);">KEYMOTE DECK</div>
+            <div id="deck-statut" style="color: var(--text-gray); font-size: 2vh;">Connexion...</div>
+        </div>
 
         <div class="deck-grid">
-            <button class="deck-btn" onclick="envoyerCommande('allume')"><span>🔓</span>PC Unlock</button>
+            <button class="deck-btn" onclick="envoyerCommande('allume')"><span>🔓</span>Unlock</button>
             <button class="deck-btn" onclick="envoyerCommande('steam')"><span>🎮</span>Steam</button>
             <button class="deck-btn" onclick="envoyerCommande('youtube')"><span>📺</span>YouTube</button>
-            <button class="deck-btn" onclick="envoyerCommande('performance')"><span>🚀</span>Boost RAM</button>
+            <button class="deck-btn" onclick="envoyerCommande('performance')"><span>🚀</span>Boost</button>
             <button class="deck-btn" onclick="envoyerCommande('ecran')"><span>🖥️</span>Écran</button>
-            <button class="deck-btn" onclick="validerExtinction()" style="border-color: #da3637;"><span>🔴</span>Éteindre</button>
+            <button class="deck-btn" onclick="validerExtinction()" style="color: #ff7b72;"><span>🔴</span>Power</button>
         </div>
+
+        <button class="btn-exit" onclick="quitterApplication()">✖ Quitter</button>
     </div>
 
     <script>
@@ -122,156 +131,137 @@
 
         let caracteristiqueBluetooth = null;
         let appareilBluetooth = null;
-        let gattServeur = null;
         let timerVeille;
-        const TEMPS_AVANT_VEILLE = 30000; 
+        let TEMPS_VEILLE = 30000; // 30s par défaut
 
-        // Enregistrement du Service Worker pour la PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log("SW Error", err));
-        }
+        // --- 1. SYNCHRO AUTOMATIQUE PWA ---
+        window.addEventListener('load', async () => {
+            // Détection NFC (30 min de veille)
+            if (new URLSearchParams(window.location.search).has('nfc')) {
+                TEMPS_VEILLE = 1800000;
+            }
 
-        // TENTATIVE DE RECONNEXION AUTOMATIQUE DIRECTE AU LANCEMENT DE L'APP
-        window.addEventListener('DOMContentLoaded', async () => {
-            // Si l'application a déjà enregistré la carte auparavant
             if (navigator.bluetooth && navigator.bluetooth.getDevices) {
                 const devices = await navigator.bluetooth.getDevices();
                 if (devices.length > 0) {
-                    appareilBluetooth = devices[0]; // On récupère la carte en mémoire
-                    appareilBluetooth.addEventListener('gattserverdisconnected', onDeconnexion);
-                    
-                    // On force l'interface graphique à s'ouvrir
-                    document.getElementById('overlay-demarrage').style.display = 'none';
-                    passerEnPleinEcranEtPaysage();
-                    reinitialiserTimerVeille();
-                    
-                    // Connexion invisible en tâche de fond !
-                    connecterAuGatt();
+                    appareilBluetooth = devices[0];
+                    rejouerConnexion();
+                } else {
+                    document.getElementById('setup-manual').style.display = 'flex';
                 }
             }
+            
+            demarrerHorloge();
+            recupererMeteo();
+            reinitialiserTimerVeille();
         });
 
-        async function passerEnPleinEcranEtPaysage() {
-            if (!document.fullscreenElement) {
-                await document.documentElement.requestFullscreen().catch(err => {});
-            }
-            if (screen.orientation && screen.orientation.lock) {
-                await screen.orientation.lock('landscape').catch(err => {});
-            }
-        }
-
-        // Uniquement pour la première utilisation (clic obligatoire)
-        async function initialiserConfigurationManuelle() {
-            await passerEnPleinEcranEtPaysage();
-            document.getElementById('overlay-demarrage').style.display = 'none';
-            reinitialiserTimerVeille();
-            
-            const statutTxt = document.getElementById('statut');
+        async function initialiserManuellement() {
             try {
-                statutTxt.innerText = "Recherche de la carte...";
-                setNotification(false);
-                
                 appareilBluetooth = await navigator.bluetooth.requestDevice({
                     filters: [{ name: 'Keymote' }],
                     optionalServices: [SERVICE_UUID]
                 });
-                
-                appareilBluetooth.addEventListener('gattserverdisconnected', onDeconnexion);
-                await connecterAuGatt();
-            } catch (erreur) {
-                statutTxt.innerText = "Liaison annulée";
-                document.getElementById('main-action-btn').innerHTML = "⚡ RÉESSAYER LA CONNEXION";
-                document.getElementById('overlay-demarrage').style.display = 'flex';
-            }
+                document.getElementById('setup-manual').style.display = 'none';
+                rejouerConnexion();
+            } catch (e) { alert("Erreur : " + e); }
         }
 
-        async function connecterAuGatt() {
-            const statutTxt = document.getElementById('statut');
+        async function rejouerConnexion() {
             try {
-                statutTxt.innerText = "Connexion...";
-                gattServeur = await appareilBluetooth.gatt.connect();
-                const service = await gattServeur.getPrimaryService(SERVICE_UUID);
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                if (screen.orientation.lock) screen.orientation.lock('landscape');
+                
+                const gatt = await appareilBluetooth.gatt.connect();
+                const service = await gatt.getPrimaryService(SERVICE_UUID);
                 caracteristiqueBluetooth = await service.getCharacteristic(CHARACTERISTIC_UUID);
                 
-                statutTxt.innerText = "Statut : Connecté ✔";
-                statutTxt.style.color = "#58a6ff";
-                statutTxt.style.borderColor = "#58a6ff";
-                setNotification(false);
+                document.getElementById('deck-statut').innerText = "Connecté ✔";
+                document.getElementById('v-badge').classList.remove('notif-alert');
             } catch (e) {
-                statutTxt.innerText = "Échec... En attente de reconnexion";
-                // En cas d'erreur de reconnexion (ex: switch), on tente de boucler
-                setTimeout(connecterAuGatt, 3000);
+                document.getElementById('deck-statut').innerText = "Recherche...";
+                setTimeout(rejouerConnexion, 5000);
             }
         }
 
-        // Quand le switch coupe l'alimentation
-        function onDeconnexion() {
-            const statutTxt = document.getElementById('statut');
-            caracteristiqueBluetooth = null;
-            statutTxt.innerText = "Statut : Déconnecté ❌";
-            statutTxt.style.color = "#ff7b72";
-            statutTxt.style.borderColor = "#30363d";
-            
-            setNotification(true); // Voyant d'alerte jaune
-            
-            // On tente de se reconnecter automatiquement en boucle dès que le switch revient sur le bon PC !
-            connecterAuGatt();
+        // --- 2. GESTION DE LA VEILLE (DASHBOARD) ---
+        function reinitialiserTimerVeille() {
+            sortirDeVeille();
+            clearTimeout(timerVeille);
+            timerVeille = setTimeout(activerVeille, TEMPS_VEILLE);
+        }
+
+        function activerVeille() {
+            document.getElementById('veille-overlay').style.display = 'flex';
+            document.getElementById('deck-ui').style.filter = 'blur(10px)';
+        }
+
+        function sortirDeVeille() {
+            document.getElementById('veille-overlay').style.display = 'none';
+            document.getElementById('deck-ui').style.filter = 'none';
+            clearTimeout(timerVeille);
+            timerVeille = setTimeout(activerVeille, TEMPS_VEILLE);
+        }
+
+        // --- 3. INFOS SYSTÈME (HEURE, DATE, BATTERIE) ---
+        function demarrerHorloge() {
+            setInterval(() => {
+                const now = new Date();
+                const h = now.getHours().toString().padStart(2, '0');
+                const m = now.getMinutes().toString().padStart(2, '0');
+                document.getElementById('v-time').innerText = `${h}:${m}`;
+                
+                const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                document.getElementById('v-date').innerText = now.toLocaleDateString('fr-FR', options);
+            }, 1000);
+
+            if (navigator.getBattery) {
+                navigator.getBattery().then(bat => {
+                    const updateBat = () => { document.getElementById('v-bat').innerText = Math.round(bat.level * 100) + "%"; };
+                    updateBat();
+                    bat.onlevelchange = updateBat;
+                });
+            }
+        }
+
+        // --- 4. MÉTÉO ---
+        async function recupererMeteo() {
+            try {
+                // Utilisation d'un service gratuit sans clé API pour simplifier
+                const res = await fetch('https://wttr.in/?format=j1');
+                const data = await res.json();
+                document.getElementById('v-temp').innerText = data.current_condition[0].temp_C;
+                // On pourrait mapper les weatherCode pour changer l'icône
+            } catch (e) { console.log("Meteo indisponible"); }
+        }
+
+        // --- 5. COMMANDES & SORTIE ---
+        async function envoyerCommande(ordre) {
+            reinitialiserTimerVeille();
+            if (caracteristiqueBluetooth) {
+                const encoder = new TextEncoder();
+                await caracteristiqueBluetooth.writeValue(encoder.encode(ordre));
+            } else {
+                document.getElementById('v-badge').classList.add('notif-alert');
+            }
         }
 
         function validerExtinction() {
-            if (confirm("Voulez-vous vraiment éteindre le PC ?")) {
-                envoyerCommande('eteindre');
+            if (confirm("Éteindre le PC ?")) envoyerCommande('eteindre');
+        }
+
+        function quitterApplication() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+            // On redirige vers une page vide ou google pour "sortir"
+            if(confirm("Sortir vers le bureau ?")) {
+                window.location.href = "https://www.google.com";
             }
         }
 
-        async function envoyerCommande(ordre) {
-            if (appareilBluetooth && (!gattServeur || !gattServeur.connected)) {
-                await connecterAuGatt();
-            }
-            if (!caracteristiqueBluetooth) return;
-            try {
-                const encodeur = new TextEncoder();
-                const donnees = encodeur.encode(ordre);
-                await caracteristiqueBluetooth.writeValue(donnees);
-            } catch (erreur) {
-                setNotification(true);
-            }
-        }
-
-        function setNotification(active) {
-            const badge = document.getElementById('badge');
-            if(active) badge.classList.add('notif-active');
-            else badge.classList.remove('notif-active');
-        }
-
-        function reinitialiserTimerVeille() {
-            document.getElementById('voile-veille').style.display = 'none';
-            clearTimeout(timerVeille);
-            timerVeille = setTimeout(activerSemiVeille, TEMPS_AVANT_VEILLE);
-        }
-
-        function activerSemiVeille() {
-            if (document.getElementById('overlay-demarrage').style.display === 'none') {
-                document.getElementById('voile-veille').style.display = 'flex';
-            }
-        }
-
+        // Écouteurs pour reset le timer au toucher
         window.addEventListener('touchstart', reinitialiserTimerVeille);
-        window.addEventListener('click', reinitialiserTimerVeille);
-
-        setInterval(() => {
-            const d = new Date();
-            document.getElementById('clock').innerText = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }, 1000);
-
-        if (navigator.getBattery) {
-            navigator.getBattery().then(bat => {
-                document.getElementById('battery-level').innerText = Math.round(bat.level * 100) + "%";
-                bat.addEventListener('levelchange', () => {
-                    document.getElementById('battery-level').innerText = Math.round(bat.level * 100) + "%";
-                });
-            });
-        }
     </script>
 </body>
 </html>
